@@ -234,6 +234,12 @@ async def unblockpm(unblock):
     """ For .unblock command, let people PMing you again! """
     if not unblock.text[0].isalpha() and unblock.text[0] \
             not in ("/", "#", "@", "!") and unblock.reply_to_msg_id:
+        try:
+            from userbot.modules.sql_helper.pm_permit_sql import approve
+        except AttributeError:
+            await unblock.edit("`Running on Non-SQL mode!`")
+            return
+
         if unblock.reply_to_msg_id:
             reply = await unblock.get_reply_message()
             replied_user = await unblock.client(GetFullUserRequest(reply.from_id))
@@ -254,16 +260,22 @@ async def unblockpm(unblock):
 
 
 CMD_HELP.update({
-    "pmpermit": "\
-.approve\
-\nUsage: Approves the mentioned/replied person to PM.\
-\n\n.block\
-\nUsage: Blocks the person from PMing you.\
-\n\n.unblock\
-\nUsage: Unblocks the person so they can PM you.\
-\n\n.notifoff\
-\nUsage: Clears any notifications of unapproved PMs.\
-\n\n.notifon\
-\nUsage: Allows notifications for unapproved PMs.\
-"
+    'pmpermit': '.approve\
+        \nUsage: Approves the mentioned/replied person to PM.'
+})
+
+CMD_HELP.update({
+    '.block': 'Usage: Blocks the person from PMing you.'
+})
+
+CMD_HELP.update({
+    '.unblock': 'Usage: Unblocks the person so they can PM you.'
+})
+
+CMD_HELP.update({
+    '.notifoff': 'Usage: Clears any notifications of unapproved PMs.'
+})
+
+CMD_HELP.update({
+    '.notifon': 'Usage: Allows notifications for unapproved PMs.'
 })
