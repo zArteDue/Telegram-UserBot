@@ -9,10 +9,12 @@
 from userbot import BOTLOG, BOTLOG_CHATID, CMD_HELP
 from userbot.events import register
 
+
 @register(outgoing=True, pattern="^.unmutechat$")
 async def unmute_chat(unm_e):
     """ For .unmutechat command, unmute a muted chat. """
-    if not unm_e.text[0].isalpha() and unm_e.text[0] not in ("/", "#", "@", "!"):
+    if not unm_e.text[0].isalpha() and unm_e.text[0] not in (
+            "/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.keep_read_sql import unkread
         except AttributeError:
@@ -25,7 +27,8 @@ async def unmute_chat(unm_e):
 @register(outgoing=True, pattern="^.mutechat$")
 async def mute_chat(mute_e):
     """ For .mutechat command, mute any chat. """
-    if not mute_e.text[0].isalpha() and mute_e.text[0] not in ("/", "#", "@", "!"):
+    if not mute_e.text[0].isalpha() and mute_e.text[0] not in (
+            "/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.keep_read_sql import kread
         except AttributeError:

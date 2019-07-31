@@ -131,7 +131,8 @@ async def auto_accept(event):
 @register(outgoing=True, pattern="^.notifoff$")
 async def notifoff(noff_event):
     """ For .notifoff command, stop getting notifications from unapproved PMs. """
-    if not noff_event.text[0].isalpha() and noff_event.text[0] not in ("/", "#", "@", "!"):
+    if not noff_event.text[0].isalpha(
+    ) and noff_event.text[0] not in ("/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.globals import addgvar
         except AttributeError:
@@ -143,7 +144,8 @@ async def notifoff(noff_event):
 @register(outgoing=True, pattern="^.notifon$")
 async def notifon(non_event):
     """ For .notifoff command, get notifications from unapproved PMs. """
-    if not non_event.text[0].isalpha() and non_event.text[0] not in ("/", "#", "@", "!"):
+    if not non_event.text[0].isalpha(
+    ) and non_event.text[0] not in ("/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.globals import delgvar
         except AttributeError:
@@ -155,7 +157,8 @@ async def notifon(non_event):
 @register(outgoing=True, pattern="^.approve$")
 async def approvepm(apprvpm):
     """ For .approve command, give someone the permissions to PM you. """
-    if not apprvpm.text[0].isalpha() and apprvpm.text[0] not in ("/", "#", "@", "!"):
+    if not apprvpm.text[0].isalpha() and apprvpm.text[0] not in (
+            "/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.pm_permit_sql import approve
         except AttributeError:

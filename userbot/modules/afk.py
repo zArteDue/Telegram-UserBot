@@ -9,8 +9,14 @@ import time
 
 from telethon.events import StopPropagation
 
-from userbot import (AFKREASON, COUNT_MSG, CMD_HELP, ISAFK, BOTLOG, BOTLOG_CHATID,
-                     USERS)
+from userbot import (
+    AFKREASON,
+    COUNT_MSG,
+    CMD_HELP,
+    ISAFK,
+    BOTLOG,
+    BOTLOG_CHATID,
+    USERS)
 from userbot.events import register
 
 
@@ -75,7 +81,8 @@ async def afk_on_pm(sender):
 @register(outgoing=True, pattern="^.afk")
 async def set_afk(afk_e):
     """ For .afk command, allows you to inform people that you are afk when they message you """
-    if not afk_e.text[0].isalpha() and afk_e.text[0] not in ("/", "#", "@", "!"):
+    if not afk_e.text[0].isalpha() and afk_e.text[0] not in (
+            "/", "#", "@", "!"):
         message = afk_e.text
         string = str(message[5:])
         global ISAFK

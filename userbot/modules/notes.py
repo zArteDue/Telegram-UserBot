@@ -82,6 +82,7 @@ async def incom_note(getnt):
     except AttributeError:
         pass
 
+
 @register(outgoing=True, pattern="^.rmnotes$")
 async def purge_notes(prg):
     """ For .rmnotes command, remove every note in the chat at once. """

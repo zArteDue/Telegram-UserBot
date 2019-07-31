@@ -39,7 +39,8 @@ async def filter_incoming_handler(handler):
 @register(outgoing=True, pattern="^.filter\\s.*")
 async def add_new_filter(new_handler):
     """ For .filter command, allows adding new filters in a chat """
-    if not new_handler.text[0].isalpha() and new_handler.text[0] not in ("/", "#", "@", "!"):
+    if not new_handler.text[0].isalpha(
+    ) and new_handler.text[0] not in ("/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.filter_sql import add_filter
         except AttributeError:
@@ -56,7 +57,8 @@ async def add_new_filter(new_handler):
 
         msg = "`Filter` **{}** `{} successfully`"
 
-        if add_filter(str(new_handler.chat_id), keyword[1], string[1:]) is True:
+        if add_filter(str(new_handler.chat_id),
+                      keyword[1], string[1:]) is True:
             await new_handler.edit(msg.format(keyword[1], 'added'))
         else:
             await new_handler.edit(msg.format(keyword[1], 'updated'))
@@ -65,7 +67,8 @@ async def add_new_filter(new_handler):
 @register(outgoing=True, pattern="^.stop\\s.*")
 async def remove_a_filter(r_handler):
     """ For .stop command, allows you to remove a filter from a chat. """
-    if not r_handler.text[0].isalpha() and r_handler.text[0] not in ("/", "#", "@", "!"):
+    if not r_handler.text[0].isalpha(
+    ) and r_handler.text[0] not in ("/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.filter_sql import remove_filter
         except AttributeError:
@@ -75,7 +78,6 @@ async def remove_a_filter(r_handler):
         kek = message.split(" ")
         remove_filter(r_handler.chat_id, kek[1])
         await r_handler.edit("```Filter removed successfully```")
-
 
 
 @register(outgoing=True, pattern="^.rmfilters (.*)")
@@ -111,7 +113,8 @@ async def kick_marie_filter(kick):
 @register(outgoing=True, pattern="^.filters$")
 async def filters_active(event):
     """ For .filters command, lists all of the active filters in a chat. """
-    if not event.text[0].isalpha() and event.text[0] not in ("/", "#", "@", "!"):
+    if not event.text[0].isalpha() and event.text[0] not in (
+            "/", "#", "@", "!"):
         try:
             from userbot.modules.sql_helper.filter_sql import get_filters
         except AttributeError:
