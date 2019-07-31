@@ -6,138 +6,98 @@
 
 """ Userbot module containing commands for keeping notes. """
 
-from asyncio import sleep
-
-from userbot import (BOTLOG, BOTLOG_CHATID, CMD_HELP,
-                     is_mongo_alive, is_redis_alive)
+from userbot import BOTLOG, BOTLOG_CHATID, CMD_HELP
 from userbot.events import register
-from userbot.modules.dbhelper import (get_note, get_notes,
-                                      add_note, delete_note)
 
 
 @register(outgoing=True, pattern="^.saved$")
-async def notes_active(event):
+async def notes_active(svd):
     """ For .saved command, list all of the notes saved in a chat. """
-    cmd = event.text[0]
-    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
-        if not is_mongo_alive() or not is_redis_alive():
-            await event.edit("`Database connections failing!`")
+    if not svd.text[0].isalpha() and svd.text[0] not in ("/", "#", "@", "!"):
+        try:
+            from userbot.modules.sql_helper.notes_sql import get_notes
+        except AttributeError:
+            await svd.edit("`Running on Non-SQL mode!`")
             return
-
-        message = "`There are no saved notes in this chat`"
-        notes = await get_notes(event.chat_id)
-        for note in notes:
-            if message == "`There are no saved notes in this chat`":
-                message = "Notes saved in this chat:\n"
-                message += "🔹 **{}**\n".format(note["name"])
-            else:
-                message += "🔹 **{}**\n".format(note["name"])
-
-        await event.edit(message)
+        notes = get_notes(svd.chat_id)
+        message = '`There are no saved notes in this chat.`'
+        if notes:
+            message = "Notes saved in this chat: \n\n"
+            for note in notes:
+                message = message + "🔹 " + note.keyword + "\n"
+        await svd.edit(message)
 
 
 @register(outgoing=True, pattern=r"^.clear (\w*)")
-async def remove_notes(event):
+async def remove_notes(clr):
     """ For .clear command, clear note with the given name."""
-    cmd = event.text[0]
-    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
-        if not is_mongo_alive() or not is_redis_alive():
-            await event.edit("`Database connections failing!`")
+    if not clr.text[0].isalpha() and clr.text[0] not in ("/", "#", "@", "!"):
+        try:
+            from userbot.modules.sql_helper.notes_sql import rm_note
+        except AttributeError:
+            await clr.edit("`Running on Non-SQL mode!`")
             return
-        notename = event.pattern_match.group(1)
-        if await delete_note(event.chat_id, notename) is False:
-            return await event.edit("`Couldn't find note:` **{}**"
-                                    .format(notename))
-        else:
-            return await event.edit("`Successfully deleted note:` **{}**"
-                                    .format(notename))
+        notename = clr.pattern_match.group(1)
+        rm_note(clr.chat_id, notename)
+        await clr.edit("```Note removed successfully```")
 
 
 @register(outgoing=True, pattern=r"^.save (\w*)")
-async def add_filter(event):
+async def add_filter(fltr):
     """ For .save command, saves notes in a chat. """
-    cmd = event.text[0]
-    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
-        if not is_mongo_alive() or not is_redis_alive():
-            await event.edit("`Database connections failing!`")
+    if not fltr.text[0].isalpha() and fltr.text[0] not in ("/", "#", "@", "!"):
+        try:
+            from userbot.modules.sql_helper.notes_sql import add_note
+        except AttributeError:
+            await fltr.edit("`Running on Non-SQL mode!`")
             return
 
-        notename = event.pattern_match.group(1)
-        string = event.text.partition(notename)[2]
-        if event.reply_to_msg_id:
-            string = " " + (await event.get_reply_message()).text
+        notename = fltr.pattern_match.group(1)
+        string = fltr.text.partition(notename)[2]
+        if fltr.reply_to_msg_id:
+            rep_msg = await fltr.get_reply_message()
+            string = rep_msg.text
+        add_note(str(fltr.chat_id), notename, string)
 
-        msg = "`Note {} successfully. Use` #{} `to get it`"
-
-        if await add_note(event.chat_id, notename, string[1:]) is False:
-            return await event.edit(msg.format('updated', notename))
-        else:
-            return await event.edit(msg.format('added', notename))
-
-
-@register(outgoing=True, pattern=r"^.note (\w*)")
-async def save_note(event):
-    """ For .save command, saves notes in a chat. """
-    cmd = event.text[0]
-    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
-        if not is_mongo_alive() or not is_redis_alive():
-            await event.edit("`Database connections failing!`")
-            return
-        note = event.text[6:]
-        note_db = await get_note(event.chat_id, note)
-        if not await get_note(event.chat_id, note):
-            return await event.edit("`Note` **{}** `doesn't exist!`"
-                                    .format(note))
-        else:
-            return await event.edit(" 🔹 **{}** - `{}`"
-                                    .format(note, note_db["text"]))
+        await fltr.edit(
+            "`Note added successfully. Use` #{} `to get it`".format(notename)
+        )
 
 
 @register(pattern=r"#\w*", disable_edited=True)
-async def note(event):
+async def incom_note(getnt):
     """ Notes logic. """
     try:
-        if not (await event.get_sender()).bot:
-            if not is_mongo_alive() or not is_redis_alive():
+        if not (await getnt.get_sender()).bot:
+            try:
+                from userbot.modules.sql_helper.notes_sql import get_notes
+            except AttributeError:
                 return
-
-            notename = event.text[1:]
-            note = await get_note(event.chat_id, notename)
-            if note:
-                await event.reply(note["text"])
-    except BaseException:
+            notename = getnt.text[1:]
+            notes = get_notes(getnt.chat_id)
+            for note in notes:
+                if notename == note.keyword:
+                    await getnt.reply(note.reply)
+                    return
+    except AttributeError:
         pass
 
-
-@register(outgoing=True, pattern="^.rmnotes (.*)")
-async def kick_marie_notes(kick):
-    """ For .rmfilters command, allows you to kick all \
-        Marie(or her clones) filters from a chat. """
-    if not kick.text[0].isalpha() and kick.text[0] not in ("/", "#", "@", "!"):
-        bot_type = kick.pattern_match.group(1)
-        if bot_type not in ["marie", "rose"]:
-            await kick.edit("`That bot is not yet supported!`")
+@register(outgoing=True, pattern="^.rmnotes$")
+async def purge_notes(prg):
+    """ For .rmnotes command, remove every note in the chat at once. """
+    if not prg.text[0].isalpha() and prg.text[0] not in ("/", "#", "@", "!"):
+        try:
+            from userbot.modules.sql_helper.notes_sql import rm_all_notes
+        except AttributeError:
+            await prg.edit("`Running on Non-SQL mode!`")
             return
-        await kick.edit("```Will be kicking away all Notes!```")
-        await sleep(3)
-        resp = await kick.get_reply_message()
-        filters = resp.text.split("-")[1:]
-        for i in filters:
-            if bot_type == "marie":
-                await kick.reply("/clear %s" % (i.strip()))
-            if bot_type == "rose":
-                i = i.replace('`', '')
-                await kick.reply("/clear %s" % (i.strip()))
-            await sleep(0.3)
-        await kick.respond(
-            "```Successfully purged bots notes yaay!```\n Gimme cookies!"
-        )
-        if BOTLOG:
-            await kick.client.send_message(
-                BOTLOG_CHATID, "I cleaned all Notes at " +
-                               str(kick.chat_id)
-            )
-
+        if not prg.text[0].isalpha():
+            await prg.edit("```Purging all notes.```")
+            rm_all_notes(str(prg.chat_id))
+            if BOTLOG:
+                await prg.client.send_message(
+                    BOTLOG_CHATID, "I cleaned all notes at " + str(prg.chat_id)
+                )
 
 CMD_HELP.update({
     "notes": "\

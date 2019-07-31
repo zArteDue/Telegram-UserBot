@@ -20,19 +20,15 @@ from telethon.tl.types import (ChannelParticipantsAdmins, ChatAdminRights,
                                ChatBannedRights, MessageEntityMentionName,
                                MessageMediaPhoto)
 
-from userbot import (BRAIN_CHECKER,
-                     CMD_HELP, BOTLOG, BOTLOG_CHATID, bot,
-                     is_mongo_alive, is_redis_alive)
+from userbot import BOTLOG, BOTLOG_CHATID, BRAIN_CHECKER, CMD_HELP, bot
 from userbot.events import register
-from userbot.modules.dbhelper import (mute, unmute, get_muted,
-                                      gmute, ungmute, get_gmuted)
 
 # =================== CONSTANT ===================
 PP_TOO_SMOL = "`The image is too small`"
 PP_ERROR = "`Failure while processing image`"
 NO_ADMIN = "`You aren't an admin!`"
 NO_PERM = "`You don't have sufficient permissions!`"
-NO_SQL = "`Database connections failing!`"
+NO_SQL = "`Running on Non-SQL mode!`"
 
 CHAT_PP_CHANGED = "`Chat Picture Changed`"
 CHAT_PP_ERROR = "`Some issue with updating the pic,`" \
@@ -353,7 +349,9 @@ async def spider(spdr):
     """
     if not spdr.text[0].isalpha() and spdr.text[0] not in ("/", "#", "@", "!"):
         # Check if the function running under SQL mode
-        if not is_mongo_alive() or not is_redis_alive():
+        try:
+            from userbot.modules.sql_helper.spam_mute_sql import mute
+        except AttributeError:
             await spdr.edit(NO_SQL)
             return
 
@@ -390,7 +388,7 @@ async def spider(spdr):
 
         # If everything goes well, do announcing and mute
         await spdr.edit("`Gets a tape!`")
-        if await mute(spdr.chat_id, user.id) is False:
+        if mute(spdr.chat_id, user.id) is False:
             return await spdr.edit('`Error! User probably already muted.`')
         else:
             try:
@@ -433,7 +431,9 @@ async def unmoot(unmot):
             return
 
         # Check if the function running under SQL mode
-        if not is_mongo_alive() or not is_redis_alive():
+        try:
+            from userbot.modules.sql_helper.spam_mute_sql import unmute
+        except AttributeError:
             await unmot.edit(NO_SQL)
             return
         # If admin or creator, inform the user and start unmuting
@@ -444,7 +444,7 @@ async def unmoot(unmot):
         else:
             return
 
-        if await unmute(unmot.chat_id, user.id) is False:
+        if unmute(unmot.chat_id, user.id) is False:
             return await unmot.edit("`Error! User probably already unmuted.`")
         else:
 
@@ -473,8 +473,13 @@ async def unmoot(unmot):
 @register(incoming=True)
 async def muter(moot):
     """ Used for deleting the messages of muted people """
-    muted = await get_muted(moot.chat_id)
-    gmuted = await get_gmuted()
+    try:
+        from userbot.modules.sql_helper.spam_mute_sql import is_muted
+        from userbot.modules.sql_helper.gmute_sql import is_gmuted
+    except AttributeError:
+        return
+    muted = is_muted(moot.chat_id)
+    gmuted = is_gmuted(moot.sender_id)
     rights = ChatBannedRights(
         until_date=None,
         send_messages=True,
@@ -487,7 +492,7 @@ async def muter(moot):
     )
     if muted:
         for i in muted:
-            if i == moot.sender_id:
+            if str(i.sender) == str(moot.sender_id):
                 await moot.delete()
                 await moot.client(EditBannedRequest(
                     moot.chat_id,
@@ -495,7 +500,7 @@ async def muter(moot):
                     rights
                 ))
     for i in gmuted:
-        if i == moot.sender_id:
+        if i.sender == str(moot.sender_id):
             await moot.delete()
 
 
@@ -515,7 +520,9 @@ async def ungmoot(un_gmute):
             return
 
         # Check if the function running under SQL mode
-        if not is_mongo_alive() or not is_redis_alive():
+        try:
+            from userbot.modules.sql_helper.gmute_sql import ungmute
+        except AttributeError:
             await un_gmute.edit(NO_SQL)
             return
 
@@ -528,7 +535,7 @@ async def ungmoot(un_gmute):
         # If pass, inform and start ungmuting
         await un_gmute.edit('```Ungmuting...```')
 
-        if await ungmute(user.id) is False:
+        if ungmute(user.id) is False:
             await un_gmute.edit("`Error! User probably not gmuted.`")
         else:
 
@@ -560,7 +567,9 @@ async def gspider(gspdr):
             return
 
         # Check if the function running under SQL mode
-        if not is_mongo_alive() or not is_redis_alive():
+        try:
+            from userbot.modules.sql_helper.gmute_sql import gmute
+        except AttributeError:
             await gspdr.edit(NO_SQL)
             return
         user = await get_user_from_event(gspdr)
@@ -576,8 +585,9 @@ async def gspider(gspdr):
 
         # If pass, inform and start gmuting
         await gspdr.edit("`Grabs a huge, sticky duct tape!`")
+        gmute(user.id)
 
-        if await gmute(user.id) is False:
+        if gmute(user.id) is False:
             await gspdr.edit('`Error! User probably already gmuted.`')
         else:
             await gspdr.edit("`Globally taped!`")
@@ -873,20 +883,14 @@ CMD_HELP.update({
     "ungmute": "Usage: Reply message with .ungmute to remove them from the gmuted list."
 })
 
-CMD_HELP.update(
-    {
-        "delusers": "Usage: Searches for deleted accounts in a group."
-    }
-)
+CMD_HELP.update({
+    "delusers": "Usage: Searches for deleted accounts in a group."
+})
 
-CMD_HELP.update(
-    {
-        "delusers clean": "Usage: Searches and removes deleted accounts from the group"
-    }
-)
+CMD_HELP.update({
+    "delusers clean": "Usage: Searches and removes deleted accounts from the group"
+})
 
-CMD_HELP.update(
-    {
-        "adminlist": "Usage: Retrieves all admins in the chat."
-    }
-)
+CMD_HELP.update({
+    "adminlist": "Usage: Retrieves all admins in the chat."
+})

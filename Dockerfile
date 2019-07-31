@@ -1,65 +1,54 @@
-# We're using Alpine stable
+# We're using Alpine Edge
 FROM alpine:edge
 
 #
 # We have to uncomment Community repo for some packages
 #
-RUN sed -e 's;^#http\(.*\)/v3.9/community;http\1/v3.9/community;g' -i /etc/apk/repositories
+RUN sed -e 's;^#http\(.*\)/edge/community;http\1/edge/community;g' -i /etc/apk/repositories
 
-# Installing Python 
+# Installing Core Components
 RUN apk add --no-cache --update \
     git \
-    dash \
-    libffi-dev \
-    openssl-dev \
-    bzip2-dev \
-    zlib-dev \
-    readline-dev \
-    sqlite-dev \
-    build-base \
+    bash \
     python3 \
-    redis \
-    libxslt-dev \
-    libxml2 \
-    libxml2-dev \
-    py-pip \
-    libpq \
-    build-base \
-    linux-headers \
-    jpeg-dev \
-    curl \
-    neofetch \
-    sudo \
-    gcc \
-    python-dev \
-    python3-dev \
-    musl \
-    sqlite \
-    figlet \
-    libwebp-dev
+    sudo
 
-RUN pip3 install --upgrade pip setuptools
+RUN python3 -m ensurepip \
+    && pip3 install --upgrade pip setuptools \
+    && rm -r /usr/lib/python*/ensurepip && \
+    if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
+    if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
+    rm -r /root/.cache
 
-# Copy Python Requirements to /app
 
+#
+# Install dependencies
+#
+RUN apk add --no-cache \
+    py-pillow py-requests \
+    py-sqlalchemy py-psycopg2 \
+    libpq curl neofetch \
+    musl py-tz py3-aiohttp \
+    py-six py-click
+
+RUN apk add --no-cache sqlite figlet
+
+#
+# Make user for userbot itself
+#
 RUN  sed -e 's;^# \(%wheel.*NOPASSWD.*\);\1;g' -i /etc/sudoers
 RUN adduser userbot --disabled-password --home /home/userbot
 RUN adduser userbot wheel
+
 USER userbot
-RUN mkdir /home/userbot/userbot
-RUN git clone -b master https://github.com/baalajimaestro/Telegram-UserBot /home/userbot/userbot
+RUN git clone -b sql-backup https://github.com/baalajimaestro/Telegram-UserBot /home/userbot/userbot
 WORKDIR /home/userbot/userbot
 
 #
-#Copies session and config(if it exists)
+# Copies session and config(if it exists)
 #
-
-COPY ./userbot.session ./config.env* /home/userbot/userbot/
-
-#
-# Install requirements
-#
+COPY ./userbot.session ./config.env /home/userbot/userbot/
 
 RUN sudo pip3 install -r requirements.txt
 RUN sudo chmod -R 777 /home/userbot/userbot
-CMD ["dash","init/start.sh"]
+CMD ["python3","-m","userbot"]
